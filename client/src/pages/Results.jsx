@@ -23,6 +23,8 @@ export default function Results() {
       setIsLoading(true);
       try {
         const { data } = await api.get(`/uploads/${uploadId}`);
+        console.log("showing results")
+        console.log(data)
         // Normalise DB shape to match store shape
         const mapped = data.upload.extractedIngredients.map((ing) => ({
           id: ing._id,
