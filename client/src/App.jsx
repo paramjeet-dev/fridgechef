@@ -14,14 +14,12 @@ import History from './pages/History';
 import Favorites from './pages/Favorites';
 import MealPlan from './pages/MealPlan';
 import RecipeResults from './pages/RecipeResults';
+import Inventory from './pages/Inventory';
 
-// ── Protected Route wrapper ───────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const location = useLocation();
-
   if (!isAuthenticated) {
-    // Preserve intended destination for redirect after login
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
   return children;
@@ -33,8 +31,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-surface-muted">
       <Navbar />
-
-      {/* AnimatePresence enables exit animations on route change */}
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
           {/* Public */}
@@ -43,37 +39,30 @@ export default function App() {
 
           {/* Protected */}
           <Route path="/upload" element={
-            <ProtectedRoute>
-              <PageTransition><Upload /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><Upload /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/inventory" element={
+            <ProtectedRoute><PageTransition><Inventory /></PageTransition></ProtectedRoute>
           } />
           <Route path="/results/:uploadId" element={
-            <ProtectedRoute>
-              <PageTransition><Results /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><Results /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/results/:uploadId/recipes" element={
+            <ProtectedRoute><PageTransition><RecipeResults /></PageTransition></ProtectedRoute>
           } />
           <Route path="/recipes/:spoonacularId" element={
-            <ProtectedRoute>
-              <PageTransition><RecipeDetail /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><RecipeDetail /></PageTransition></ProtectedRoute>
           } />
           <Route path="/history" element={
-            <ProtectedRoute>
-              <PageTransition><History /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><History /></PageTransition></ProtectedRoute>
           } />
           <Route path="/favorites" element={
-            <ProtectedRoute>
-              <PageTransition><Favorites /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><Favorites /></PageTransition></ProtectedRoute>
           } />
           <Route path="/mealplan" element={
-            <ProtectedRoute>
-              <PageTransition><MealPlan /></PageTransition>
-            </ProtectedRoute>
+            <ProtectedRoute><PageTransition><MealPlan /></PageTransition></ProtectedRoute>
           } />
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

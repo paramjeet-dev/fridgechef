@@ -2,23 +2,23 @@ import mongoose from 'mongoose';
 
 const nutritionSchema = new mongoose.Schema(
   {
-    servingDescription: String,       // e.g. "1 medium (7\" to 7-7/8\" long)"
-    calories: { type: Number, default: 0 },
-    protein: { type: Number, default: 0 },         // grams
-    carbs: { type: Number, default: 0 },           // grams
-    fat: { type: Number, default: 0 },             // grams
-    saturatedFat: { type: Number, default: 0 },
+    servingDescription: String,
+    calories:           { type: Number, default: 0 },
+    protein:            { type: Number, default: 0 },
+    carbs:              { type: Number, default: 0 },
+    fat:                { type: Number, default: 0 },
+    saturatedFat:       { type: Number, default: 0 },
     polyunsaturatedFat: { type: Number, default: 0 },
     monounsaturatedFat: { type: Number, default: 0 },
-    cholesterol: { type: Number, default: 0 },     // mg
-    fiber: { type: Number, default: 0 },           // grams
-    sugar: { type: Number, default: 0 },           // grams
-    sodium: { type: Number, default: 0 },          // mg
-    potassium: { type: Number, default: 0 },       // mg
-    vitaminA: { type: Number, default: 0 },        // mcg
-    vitaminC: { type: Number, default: 0 },        // mg
-    calcium: { type: Number, default: 0 },         // mg
-    iron: { type: Number, default: 0 },            // mg
+    cholesterol:        { type: Number, default: 0 },
+    fiber:              { type: Number, default: 0 },
+    sugar:              { type: Number, default: 0 },
+    sodium:             { type: Number, default: 0 },
+    potassium:          { type: Number, default: 0 },
+    vitaminA:           { type: Number, default: 0 },
+    vitaminC:           { type: Number, default: 0 },
+    calcium:            { type: Number, default: 0 },
+    iron:               { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -28,7 +28,7 @@ const ingredientSchema = new mongoose.Schema(
     uploadId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Upload',
-      required: true,
+      default: null,    // null for manually added items
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -36,6 +36,7 @@ const ingredientSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+
     // FatSecret fields
     fatSecretFoodId: {
       type: String,
@@ -43,24 +44,55 @@ const ingredientSchema = new mongoose.Schema(
     },
     name: {
       type: String,
-      required: true,    // Singular form: "banana"
+      required: true,
       lowercase: true,
       trim: true,
     },
     displayName: {
-      type: String,      // As returned by FatSecret: "Bananas"
+      type: String,
       required: true,
     },
-    // Serving info from suggested_serving
-    suggestedServingId: String,
-    suggestedServingDescription: String,  // "1 medium (7\" to 7-7/8\" long)"
-    metricAmount: Number,                 // e.g. 118 (grams)
-    metricUnit: String,                   // "g" or "ml"
-    units: Number,                        // e.g. 1.0
+
+    // Serving info from FatSecret (null for manual entries)
+    suggestedServingId:          { type: String, default: null },
+    suggestedServingDescription: { type: String, default: '' },
+    metricAmount:                { type: Number, default: 0 },
+    metricUnit:                  { type: String, default: 'g' },
+    units:                       { type: Number, default: 1 },
 
     nutrition: nutritionSchema,
 
-    // Availability toggle — user can mark ingredient as unavailable
+    // ── Inventory management fields (new) ────────────────────
+    quantity: {
+      type: Number,
+      default: 1,
+      min: 0,
+    },
+    unit: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    category: {
+      type: String,
+      enum: ['vegetables', 'fruits', 'dairy', 'meat', 'seafood', 'grains', 'condiments', 'beverages', 'snacks', 'other'],
+      default: 'other',
+    },
+    expiryDate: {
+      type: Date,
+      default: null,
+    },
+    notes: {
+      type: String,
+      default: '',
+      maxlength: 300,
+    },
+    isManualEntry: {
+      type: Boolean,
+      default: false,   // true = user added manually, false = from scan
+    },
+
+    // Availability toggle
     isAvailable: {
       type: Boolean,
       default: true,
@@ -73,6 +105,8 @@ const ingredientSchema = new mongoose.Schema(
 
 // Compound index — get all ingredients for a specific upload
 ingredientSchema.index({ uploadId: 1, fatSecretFoodId: 1 });
+// Index for inventory queries by category
+ingredientSchema.index({ userId: 1, category: 1 });
 
 const Ingredient = mongoose.model('Ingredient', ingredientSchema);
 export default Ingredient;

@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 
 const NAV_LINKS = [
   { to: '/upload',    label: 'Scan Fridge' },
+  { to: '/inventory', label: 'My Fridge'   },
   { to: '/history',   label: 'History'     },
   { to: '/favorites', label: 'Favourites'  },
   { to: '/mealplan',  label: 'Meal Plan'   },
@@ -16,10 +17,7 @@ export default function Navbar() {
   const { user, isAuthenticated, isHydrating, logout, hydrate } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Hydrate auth on first mount
   useEffect(() => { hydrate(); }, [hydrate]);
-
-  // Close mobile menu on route change
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -33,7 +31,7 @@ export default function Navbar() {
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
         aria-label="Main navigation"
       >
-        {/* ── Logo ───────────────────────────────────────── */}
+        {/* Logo */}
         <Link
           to="/"
           className="flex items-center gap-2 font-display font-bold text-xl text-brand-600 hover:text-brand-700 transition-colors"
@@ -42,14 +40,14 @@ export default function Navbar() {
           🧊 <span>FridgeChef</span>
         </Link>
 
-        {/* ── Desktop links ───────────────────────────────── */}
+        {/* Desktop links */}
         {!isHydrating && isAuthenticated && (
           <ul className="hidden md:flex items-center gap-1" role="list">
             {NAV_LINKS.map(({ to, label }) => (
               <li key={to}>
                 <Link
                   to={to}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     location.pathname.startsWith(to)
                       ? 'bg-brand-50 text-brand-700'
                       : 'text-text-secondary hover:text-text-primary hover:bg-slate-50'
@@ -62,7 +60,7 @@ export default function Navbar() {
           </ul>
         )}
 
-        {/* ── Desktop auth actions ─────────────────────────── */}
+        {/* Desktop auth */}
         <div className="hidden md:flex items-center gap-3">
           {isHydrating ? (
             <div className="h-8 w-24 skeleton rounded-lg" aria-hidden="true" />
@@ -71,21 +69,17 @@ export default function Navbar() {
               <span className="text-sm text-text-secondary">
                 Hi, <span className="font-medium text-text-primary">{user?.displayName}</span>
               </span>
-              <button onClick={handleLogout} className="btn-ghost text-sm">
-                Log out
-              </button>
+              <button onClick={handleLogout} className="btn-ghost text-sm">Log out</button>
             </>
           ) : (
             <>
               <Link to="/auth" className="btn-ghost text-sm">Log in</Link>
-              <Link to="/auth?mode=register" className="btn-primary text-sm py-2 px-4">
-                Get started
-              </Link>
+              <Link to="/auth?mode=register" className="btn-primary text-sm py-2 px-4">Get started</Link>
             </>
           )}
         </div>
 
-        {/* ── Mobile hamburger ────────────────────────────── */}
+        {/* Mobile hamburger */}
         <button
           className="md:hidden btn-ghost p-2"
           onClick={() => setMenuOpen((prev) => !prev)}
@@ -102,7 +96,7 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* ── Mobile menu ──────────────────────────────────────── */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -136,10 +130,7 @@ export default function Navbar() {
                     Log out
                   </button>
                 ) : (
-                  <Link
-                    to="/auth"
-                    className="block px-4 py-2.5 text-sm font-medium text-brand-600"
-                  >
+                  <Link to="/auth" className="block px-4 py-2.5 text-sm font-medium text-brand-600">
                     Log in / Register
                   </Link>
                 )}

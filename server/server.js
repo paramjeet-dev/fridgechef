@@ -16,31 +16,29 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import recipeRoutes from './routes/recipeRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
+import inventoryRoutes from './routes/inventoryRoutes.js';
 
-// ── Bootstrap ────────────────────────────────────────────────
 dotenv.config();
-validateEnv(); // Crash-fast if required env vars are missing
+validateEnv();
 connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ── Security Middleware ──────────────────────────────────────
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow Cloudinary images
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? process.env.CLIENT_URL
     : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,               // Required for httpOnly cookies
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// ── General Middleware ───────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));        // JSON body (base64 images can be large)
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('combined', {
@@ -48,10 +46,8 @@ app.use(morgan('combined', {
   skip: () => process.env.NODE_ENV === 'test',
 }));
 
-// ── Rate Limiting ────────────────────────────────────────────
 app.use(globalRateLimiter);
 
-// ── Health Check ─────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
@@ -60,22 +56,19 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// ── API Routes ───────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/recipes', recipeRoutes);
+app.use('/api/auth',      authRoutes);
+app.use('/api/uploads',   uploadRoutes);
+app.use('/api/recipes',   recipeRoutes);
 app.use('/api/favorites', favoriteRoutes);
-app.use('/api/mealplan', mealPlanRoutes);
+app.use('/api/mealplan',  mealPlanRoutes);
+app.use('/api/inventory', inventoryRoutes);   // ← NEW
 
-// ── 404 Handler ──────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// ── Global Error Handler (must be last) ─────────────────────
 app.use(errorHandler);
 
-// ── Start Server ─────────────────────────────────────────────
 app.listen(PORT, () => {
   logger.info(`🧊 FridgeChef server running on port ${PORT} [${process.env.NODE_ENV}]`);
 });
