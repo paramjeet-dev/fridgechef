@@ -1,0 +1,28 @@
+{
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.test.js"],
+    "transform": {},
+    "extensionsToTreatAsEsm": [".js"],
+    "collectCoverageFrom": [
+      "utils/**/*.js",
+      "services/**/*.js",
+      "controllers/**/*.js",
+      "!**/node_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "functions": 70,
+        "lines": 70
+      }
+    }
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

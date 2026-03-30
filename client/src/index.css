@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Smooth scrolling everywhere */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Remove default button styles for accessibility overrides */
+  button {
+    @apply cursor-pointer;
+  }
+
+  /* Focus ring — visible for keyboard users, hidden for mouse */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  :focus:not(:focus-visible) {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  /* ── Skeleton loader ────────────────────────────────────── */
+  .skeleton {
+    @apply bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200;
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* ── Button variants ─────────────────────────────────────── */
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+           text-white font-semibold px-5 py-2.5 rounded-xl
+           transition-colors duration-150
+           focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-slate-50 active:bg-slate-100
+           text-text-primary font-semibold px-5 py-2.5 rounded-xl
+           border border-slate-200
+           transition-colors duration-150
+           focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply hover:bg-slate-100 active:bg-slate-200
+           text-text-secondary font-medium px-4 py-2 rounded-lg
+           transition-colors duration-150;
+  }
+
+  /* ── Card ─────────────────────────────────────────────────── */
+  .card {
+    @apply bg-surface-card rounded-2xl shadow-card border border-slate-100;
+  }
+
+  /* ── Input ───────────────────────────────────────────────── */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200
+           bg-white text-text-primary placeholder:text-text-muted
+           focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100
+           transition-colors duration-150;
+  }
+
+  /* ── Badge ───────────────────────────────────────────────── */
+  .badge-green  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700; }
+  .badge-orange { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-600; }
+  .badge-slate  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600; }
+}
