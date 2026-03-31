@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { to: '/history',   label: 'History'     },
   { to: '/favorites', label: 'Favourites'  },
   { to: '/mealplan',  label: 'Meal Plan'   },
+  { to: '/dashboard', label: 'Dashboard'   },
 ];
 
 export default function Navbar() {

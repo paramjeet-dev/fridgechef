@@ -15,6 +15,7 @@ import Favorites from './pages/Favorites';
 import MealPlan from './pages/MealPlan';
 import RecipeResults from './pages/RecipeResults';
 import Inventory from './pages/Inventory';
+import Dashboard from './pages/Dashboard';
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -43,6 +44,9 @@ export default function App() {
           } />
           <Route path="/inventory" element={
             <ProtectedRoute><PageTransition><Inventory /></PageTransition></ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>
           } />
           <Route path="/results/:uploadId" element={
             <ProtectedRoute><PageTransition><Results /></PageTransition></ProtectedRoute>
