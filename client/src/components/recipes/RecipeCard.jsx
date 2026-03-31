@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { favoriteApi } from '../../api/recipeApi';
+import DifficultyBadge from './DifficultyBadge';
 import toast from 'react-hot-toast';
 
 function ClockIcon() {
@@ -31,10 +32,11 @@ export default function RecipeCard({ recipe }) {
     spoonacularId, title, image, cookTime,
     matchPercent = 0, missedIngredientCount = 0,
     diets = [], cuisines = [],
+    instructions = [], ingredients = [],
   } = recipe;
 
   const handleFavToggle = async (e) => {
-    e.stopPropagation(); // Don't navigate to detail
+    e.stopPropagation();
     setIsTogglingFav(true);
     try {
       if (isFav) {
@@ -71,44 +73,37 @@ export default function RecipeCard({ recipe }) {
       {/* Image */}
       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
         {image ? (
-          <img
-            src={image}
-            alt={title}
+          <img src={image} alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
+            loading="lazy" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl" aria-hidden="true">
-            🍽️
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-4xl" aria-hidden="true">🍽️</div>
         )}
 
         {/* Match % badge */}
         <div className="absolute top-2 left-2">
-          <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-              matchPercent >= 80 ? 'bg-brand-500 text-white'
-              : matchPercent >= 50 ? 'bg-accent-400 text-white'
-              : 'bg-white/90 text-text-secondary'
-            }`}
-            aria-label={`${matchPercent}% ingredient match`}
-          >
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+            matchPercent >= 80 ? 'bg-brand-500 text-white'
+            : matchPercent >= 50 ? 'bg-accent-400 text-white'
+            : 'bg-white/90 text-text-secondary'
+          }`} aria-label={`${matchPercent}% ingredient match`}>
             {matchPercent}% match
           </span>
+        </div>
+
+        {/* Difficulty badge */}
+        <div className="absolute bottom-2 left-2">
+          <DifficultyBadge recipe={{ cookTime, instructions, ingredients }} />
         </div>
 
         {/* Favourite button */}
         <button
           onClick={handleFavToggle}
           disabled={isTogglingFav}
-          className={`
-            absolute top-2 right-2 w-8 h-8 rounded-full
-            flex items-center justify-center
-            bg-white/90 hover:bg-white shadow-sm
-            transition-all duration-150
+          className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center
+            bg-white/90 hover:bg-white shadow-sm transition-all duration-150
             ${isFav ? 'text-red-500' : 'text-slate-400 hover:text-red-400'}
-            opacity-0 group-hover:opacity-100 focus-visible:opacity-100
-          `}
+            opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}
           aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
           aria-pressed={isFav}
         >
@@ -122,12 +117,10 @@ export default function RecipeCard({ recipe }) {
           {title}
         </h3>
 
-        {/* Meta row */}
         <div className="flex items-center gap-3 text-xs text-text-muted mb-3">
           {cookTime && (
             <span className="flex items-center gap-1">
-              <ClockIcon />
-              {cookTime} min
+              <ClockIcon />{cookTime} min
             </span>
           )}
           {missedIngredientCount > 0 && (
@@ -140,13 +133,10 @@ export default function RecipeCard({ recipe }) {
           )}
         </div>
 
-        {/* Diet tags */}
         {(diets.length > 0 || cuisines.length > 0) && (
           <div className="flex flex-wrap gap-1">
             {[...cuisines.slice(0, 1), ...diets.slice(0, 2)].map((tag) => (
-              <span key={tag} className="badge-slate capitalize">
-                {tag}
-              </span>
+              <span key={tag} className="badge-slate capitalize">{tag}</span>
             ))}
           </div>
         )}

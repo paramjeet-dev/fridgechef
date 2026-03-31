@@ -18,6 +18,7 @@ import favoriteRoutes from './routes/favoriteRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import groceryRoutes   from './routes/groceryRoutes.js';
 
 dotenv.config();
 validateEnv();
@@ -64,6 +65,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/mealplan',  mealPlanRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/grocery',   groceryRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
