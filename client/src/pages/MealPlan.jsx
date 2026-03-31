@@ -314,6 +314,12 @@ export default function MealPlan() {
 
   useEffect(() => { fetchMealPlan(); }, [fetchMealPlan]);
 
+  useEffect(() => {
+  if (mealPlan) {
+    console.log('Meal Plan:', mealPlan);
+  }
+}, [mealPlan]);
+
   const handleGenerate = () => {
     generateMealPlan({
       targetCalories: 2000,

@@ -152,24 +152,57 @@ export const generatePlan = async (req, res, next) => {
 
     const spoonacularPlan = await generateMealPlan({ targetCalories, diet });
 
-    // Spoonacular returns a week plan — map it to our MealPlan schema
-    const days = (spoonacularPlan.week
+    // Extract raw days from Spoonacular
+    const rawDays = spoonacularPlan.week
       ? Object.values(spoonacularPlan.week)
-      : []
-    ).map((day, i) => ({
+      : [];
+
+    // Collect all recipe IDs
+    const allIds = rawDays.flatMap((day) =>
+      (day.meals || []).map((m) => m?.id).filter(Boolean)
+    );
+
+    // Fetch & cache all recipes (ensures DB has them)
+    await Promise.allSettled(allIds.map((id) => getRecipeDetails(id)));
+
+    // Fetch all recipes from DB in one go (OPTIMIZED)
+    const recipes = await Recipe.find({
+      spoonacularId: { $in: allIds },
+    }).lean();
+
+    // Create a lookup map
+    const recipeMap = new Map(
+      recipes.map((r) => [r.spoonacularId, r])
+    );
+
+    // Helper to build a proper meal slot
+    const buildSlot = (meal) => {
+      if (!meal?.id) return null;
+
+      const recipe = recipeMap.get(meal.id);
+
+      return {
+        recipeId: recipe?._id || null,
+        spoonacularId: meal.id,
+        title: recipe?.title || meal.title || null,
+        image: recipe?.image || null,
+        cookTime: recipe?.readyInMinutes || null,
+        isCustom: false,
+        customName: null,
+        isCooked: false,
+      };
+    };
+
+    // Build final days structure
+    const days = rawDays.map((day, i) => ({
       dayIndex: i,
       meals: {
-        breakfast: day.meals?.[0]?.id || null,
-        lunch:     day.meals?.[1]?.id || null,
-        dinner:    day.meals?.[2]?.id || null,
+        breakfast: buildSlot(day.meals?.[0]),
+        lunch:     buildSlot(day.meals?.[1]),
+        dinner:    buildSlot(day.meals?.[2]),
+        snack:     null, // keep consistent with schema
       },
     }));
-
-    // Fetch and cache all referenced recipes
-    const allIds = days.flatMap((d) =>
-      [d.meals.breakfast, d.meals.lunch, d.meals.dinner].filter(Boolean)
-    );
-    await Promise.allSettled(allIds.map((id) => getRecipeDetails(id)));
 
     // Find Monday of current week
     const now = new Date();
@@ -177,11 +210,20 @@ export const generatePlan = async (req, res, next) => {
     monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
     monday.setHours(0, 0, 0, 0);
 
+    // Save / update meal plan
     const { MealPlan } = await import('../models/Favorite.js');
+
     const plan = await MealPlan.findOneAndUpdate(
       { userId: req.user.id, weekStartDate: monday },
-      { days, targetCalories, diet },
-      { upsert: true, new: true }
+      {
+        days,
+        targetCalories,
+        diet,
+      },
+      {
+        upsert: true,
+        new: true,
+      }
     );
 
     res.json({ success: true, mealPlan: plan });
