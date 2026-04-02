@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { favoriteApi } from '../../api/recipeApi';
 import DifficultyBadge from './DifficultyBadge';
 import toast from 'react-hot-toast';
@@ -23,14 +23,63 @@ function HeartIcon({ filled }) {
   );
 }
 
+// ── Inline missing-ingredients panel ─────────────────────────
+function MissingPanel({ items }) {
+  if (!items?.length) return null;
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="overflow-hidden"
+    >
+      <div className="border-t border-slate-100 pt-3 mt-3 space-y-1.5">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">
+          Missing ingredients
+        </p>
+        {items.map((item) => (
+          <div key={item.name} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {item.image && (
+                <img src={item.image} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />
+              )}
+              <span className="text-xs text-text-primary capitalize truncate">
+                {item.amount ? `${Number(item.amount).toFixed(item.amount % 1 === 0 ? 0 : 1)} ${item.unit || ''} ` : ''}
+                {item.name}
+              </span>
+            </div>
+            {item.shoppingUrl && (
+              <a
+                href={item.shoppingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0 text-xs font-semibold text-brand-600 hover:text-brand-700
+                           border border-brand-200 hover:border-brand-400 hover:bg-brand-50
+                           px-2 py-0.5 rounded-lg transition-colors"
+                aria-label={`Buy ${item.name}`}
+              >
+                Buy
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function RecipeCard({ recipe }) {
   const navigate = useNavigate();
-  const [isFav, setIsFav] = useState(recipe.isFavorited ?? false);
+  const [isFav, setIsFav]                 = useState(recipe.isFavorited ?? false);
   const [isTogglingFav, setIsTogglingFav] = useState(false);
+  const [showMissing, setShowMissing]     = useState(false);
 
   const {
     spoonacularId, title, image, cookTime,
     matchPercent = 0, missedIngredientCount = 0,
+    missedIngredients = [],
     diets = [], cuisines = [],
     instructions = [], ingredients = [],
   } = recipe;
@@ -53,6 +102,11 @@ export default function RecipeCard({ recipe }) {
     } finally {
       setIsTogglingFav(false);
     }
+  };
+
+  const handleMissingClick = (e) => {
+    e.stopPropagation();
+    setShowMissing((v) => !v);
   };
 
   return (
@@ -86,7 +140,7 @@ export default function RecipeCard({ recipe }) {
             matchPercent >= 80 ? 'bg-brand-500 text-white'
             : matchPercent >= 50 ? 'bg-accent-400 text-white'
             : 'bg-white/90 text-text-secondary'
-          }`} aria-label={`${matchPercent}% ingredient match`}>
+          }`}>
             {matchPercent}% match
           </span>
         </div>
@@ -117,29 +171,50 @@ export default function RecipeCard({ recipe }) {
           {title}
         </h3>
 
+        {/* Meta row */}
         <div className="flex items-center gap-3 text-xs text-text-muted mb-3">
           {cookTime && (
             <span className="flex items-center gap-1">
               <ClockIcon />{cookTime} min
             </span>
           )}
+          {/* Missing count — now a clickable toggle */}
           {missedIngredientCount > 0 && (
-            <span className="flex items-center gap-1 text-accent-500">
+            <button
+              onClick={handleMissingClick}
+              className={`flex items-center gap-1 font-medium transition-colors ${
+                showMissing ? 'text-accent-600' : 'text-accent-500 hover:text-accent-600'
+              }`}
+              aria-expanded={showMissing}
+              aria-label={`${showMissing ? 'Hide' : 'Show'} ${missedIngredientCount} missing ingredients`}
+            >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               {missedIngredientCount} missing
-            </span>
+              <svg className={`w-3 h-3 transition-transform ${showMissing ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
           )}
         </div>
 
+        {/* Diet tags */}
         {(diets.length > 0 || cuisines.length > 0) && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 mb-2">
             {[...cuisines.slice(0, 1), ...diets.slice(0, 2)].map((tag) => (
               <span key={tag} className="badge-slate capitalize">{tag}</span>
             ))}
           </div>
         )}
+
+        {/* Expandable missing ingredients panel */}
+        <AnimatePresence>
+          {showMissing && (
+            <MissingPanel items={missedIngredients} />
+          )}
+        </AnimatePresence>
       </div>
     </motion.article>
   );

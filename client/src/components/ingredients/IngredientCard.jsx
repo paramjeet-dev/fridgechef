@@ -5,13 +5,16 @@ import NutritionPanel from './NutritionPanel';
 
 const IngredientCard = forwardRef(({ ingredient, uploadId }, ref) => {
   const { toggleAvailability, isTogglingId } = useIngredientStore();
-  const isToggling = isTogglingId === ingredient.id;
 
-  const { id, displayName, name, isAvailable, nutrition, suggestedServingDescription } = ingredient;
+  // Server returns _id; upload flow normalises to id — support both
+  const id = ingredient.id || ingredient._id;
+  const isToggling = isTogglingId === id;
+
+  const { displayName, name, isAvailable, nutrition, suggestedServingDescription } = ingredient;
 
   return (
     <motion.article
-      ref={ref} // ✅ THIS is the key fix
+      ref={ref}
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: isAvailable ? 1 : 0.55, y: 0 }}
@@ -83,4 +86,5 @@ const IngredientCard = forwardRef(({ ingredient, uploadId }, ref) => {
   );
 });
 
+IngredientCard.displayName = 'IngredientCard';
 export default IngredientCard;

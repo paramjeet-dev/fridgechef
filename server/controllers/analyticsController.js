@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Upload from '../models/Upload.js';
 import Ingredient from '../models/Ingredient.js';
 import { Favorite, MealPlan } from '../models/Favorite.js';
@@ -15,7 +16,8 @@ import logger from '../utils/logger.js';
  */
 export const getStats = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId    = req.user.id;
+    const userObjId = new mongoose.Types.ObjectId(userId);
 
     const [
       totalDetections,
@@ -39,7 +41,7 @@ export const getStats = async (req, res, next) => {
 
       // 4. Most used ingredients — group by name, count occurrences
       Ingredient.aggregate([
-        { $match: { userId: userId } },
+        { $match: { userId: userObjId } },
         { $group: { _id: '$name', displayName: { $first: '$displayName' }, count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 8 },
@@ -50,7 +52,7 @@ export const getStats = async (req, res, next) => {
       Upload.aggregate([
         {
           $match: {
-            userId: userId,
+            userId: userObjId,
             createdAt: { $gte: new Date(Date.now() - 8 * 7 * 24 * 60 * 60 * 1000) },
           },
         },
@@ -70,7 +72,7 @@ export const getStats = async (req, res, next) => {
 
       // 6. Inventory category breakdown
       Ingredient.aggregate([
-        { $match: { userId: userId } },
+        { $match: { userId: userObjId } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $project: { _id: 0, category: '$_id', count: 1 } },
@@ -78,7 +80,7 @@ export const getStats = async (req, res, next) => {
 
       // 7. Average nutrition across current inventory items
       Ingredient.aggregate([
-        { $match: { userId: userId, isAvailable: true } },
+        { $match: { userId: userObjId, isAvailable: true } },
         {
           $group: {
             _id: null,

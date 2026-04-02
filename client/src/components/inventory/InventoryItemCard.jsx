@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useInventoryStore, CATEGORY_ICONS } from '../../store/useInventoryStore';
 import toast from 'react-hot-toast';
 
@@ -15,15 +15,31 @@ function ExpiryBadge({ expiryDate }) {
 export default function InventoryItemCard({ item }) {
   const { updateItem, deleteItem } = useInventoryStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [editFields, setEditFields] = useState({
-    displayName: item.displayName,
-    quantity: item.quantity ?? 1,
-    unit: item.unit ?? '',
-    category: item.category ?? 'other',
-    expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
-    notes: item.notes ?? '',
-  });
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // editFields always stays in sync with the latest item from the store
+  const [editFields, setEditFields] = useState(() => ({
+    displayName: item.displayName ?? '',
+    quantity:    item.quantity    ?? 1,
+    unit:        item.unit        ?? '',
+    category:    item.category    ?? 'other',
+    expiryDate:  item.expiryDate  ? item.expiryDate.slice(0, 10) : '',
+    notes:       item.notes       ?? '',
+  }));
+
+  // Re-sync edit fields whenever the item changes in the store
+  useEffect(() => {
+    if (!isEditing) {
+      setEditFields({
+        displayName: item.displayName ?? '',
+        quantity:    item.quantity    ?? 1,
+        unit:        item.unit        ?? '',
+        category:    item.category    ?? 'other',
+        expiryDate:  item.expiryDate  ? item.expiryDate.slice(0, 10) : '',
+        notes:       item.notes       ?? '',
+      });
+    }
+  }, [item, isEditing]);
 
   const icon = CATEGORY_ICONS[item.category] || '📦';
 
@@ -35,7 +51,7 @@ export default function InventoryItemCard({ item }) {
   const handleSave = async () => {
     await updateItem(item._id, {
       ...editFields,
-      quantity: Number(editFields.quantity),
+      quantity:   Number(editFields.quantity),
       expiryDate: editFields.expiryDate || null,
     });
     setIsEditing(false);
@@ -56,8 +72,8 @@ export default function InventoryItemCard({ item }) {
       transition={{ duration: 0.25 }}
       className={`card p-4 ${!item.isAvailable ? 'opacity-50' : ''}`}
     >
-      {/* ── View mode ─────────────────────────────────── */}
       {!isEditing ? (
+        /* ── View mode ───────────────────────────────────── */
         <>
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -107,8 +123,8 @@ export default function InventoryItemCard({ item }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
                 </svg>
               </button>
-              <span className="text-sm font-semibold text-text-primary w-12 text-center">
-                {item.quantity ?? 1} {item.unit || ''}
+              <span className="text-sm font-semibold text-text-primary w-14 text-center">
+                {item.quantity ?? 1}{item.unit ? ` ${item.unit}` : ''}
               </span>
               <button
                 onClick={() => handleQuantityChange(1)}
@@ -122,11 +138,10 @@ export default function InventoryItemCard({ item }) {
               </button>
             </div>
 
-            {/* Availability toggle */}
             <button
               onClick={() => updateItem(item._id, { isAvailable: !item.isAvailable })}
-              className={`relative w-9 h-5 rounded-full transition-colors duration-200 focus-visible:ring-2
-                          focus-visible:ring-brand-500 focus-visible:ring-offset-2
+              className={`relative w-9 h-5 rounded-full transition-colors duration-200
+                          focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
                           ${item.isAvailable ? 'bg-brand-500' : 'bg-slate-200'}`}
               role="switch"
               aria-checked={item.isAvailable}
@@ -146,13 +161,11 @@ export default function InventoryItemCard({ item }) {
           )}
         </>
       ) : (
-        /* ── Edit mode ─────────────────────────────────── */
+        /* ── Edit mode ───────────────────────────────────── */
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-semibold text-text-primary">Edit item</p>
-            <button onClick={() => setIsEditing(false)} className="btn-ghost p-1 text-xs">
-              Cancel
-            </button>
+            <button onClick={() => setIsEditing(false)} className="btn-ghost p-1 text-xs">Cancel</button>
           </div>
 
           <input
@@ -160,12 +173,12 @@ export default function InventoryItemCard({ item }) {
             value={editFields.displayName}
             onChange={(e) => setEditFields((p) => ({ ...p, displayName: e.target.value }))}
             placeholder="Name"
+            autoFocus
           />
 
           <div className="flex gap-2">
             <input
-              type="number"
-              min="0"
+              type="number" min="0"
               className="input text-sm py-2 w-24"
               value={editFields.quantity}
               onChange={(e) => setEditFields((p) => ({ ...p, quantity: e.target.value }))}
@@ -175,7 +188,7 @@ export default function InventoryItemCard({ item }) {
               className="input text-sm py-2 flex-1"
               value={editFields.unit}
               onChange={(e) => setEditFields((p) => ({ ...p, unit: e.target.value }))}
-              placeholder="Unit (e.g. kg, cups)"
+              placeholder="Unit (kg, cups…)"
             />
           </div>
 
@@ -190,8 +203,7 @@ export default function InventoryItemCard({ item }) {
           </select>
 
           <input
-            type="date"
-            className="input text-sm py-2"
+            type="date" className="input text-sm py-2"
             value={editFields.expiryDate}
             onChange={(e) => setEditFields((p) => ({ ...p, expiryDate: e.target.value }))}
           />

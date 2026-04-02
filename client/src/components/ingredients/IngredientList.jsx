@@ -1,22 +1,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useIngredientStore } from '../../store/useIngredientStore';
 import IngredientCard from './IngredientCard';
 import { EmptyState } from '../shared/index';
 
 const containerVariants = {
   hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.06,  // Each card appears 60ms after the previous
-    },
-  },
+  show: { transition: { staggerChildren: 0.06 } },
 };
 
-export default function IngredientList({ uploadId }) {
-  const navigate = useNavigate();
-  const ingredients = useIngredientStore((s) => s.ingredients);
-  const availableIngredients = useIngredientStore((s) => s.availableIngredients());
+// onFindRecipes is passed in from Results.jsx — keeps navigation logic there
+export default function IngredientList({ uploadId, onFindRecipes }) {
+  const ingredients          = useIngredientStore((s) => s.ingredients);
+  const availableIngredients = useIngredientStore((s) =>
+    s.ingredients.filter((i) => i.isAvailable)
+  );
 
   if (ingredients.length === 0) {
     return (
@@ -25,18 +22,15 @@ export default function IngredientList({ uploadId }) {
         title="No ingredients detected"
         description="We couldn't identify any ingredients in your photos. Try again with clearer, better-lit images."
         action={
-          <button
-            onClick={() => navigate('/upload')}
-            className="btn-primary"
-          >
-            Try again
+          <button onClick={() => window.history.back()} className="btn-primary">
+            Go back
           </button>
         }
       />
     );
   }
 
-  // Totals across all available ingredients
+  // Nutrition totals across available ingredients
   const totals = availableIngredients.reduce(
     (acc, ing) => ({
       calories: acc.calories + (ing.nutrition?.calories || 0),
@@ -49,7 +43,7 @@ export default function IngredientList({ uploadId }) {
 
   return (
     <section aria-label="Detected ingredients">
-      {/* Header row with count and CTA */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-display font-bold text-text-primary">
@@ -63,9 +57,9 @@ export default function IngredientList({ uploadId }) {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => navigate(`/results/${uploadId}`)}
+          onClick={onFindRecipes}
           disabled={availableIngredients.length === 0}
-          className="btn-primary flex-shrink-0 flex items-center gap-2"
+          className="btn-primary flex-shrink-0 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-disabled={availableIngredients.length === 0}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +92,7 @@ export default function IngredientList({ uploadId }) {
         </motion.div>
       )}
 
-      {/* Cards grid with stagger animation */}
+      {/* Cards grid */}
       <motion.div
         variants={containerVariants}
         initial="hidden"

@@ -5,15 +5,7 @@ import toast from 'react-hot-toast';
 export const useIngredientStore = create((set, get) => ({
   // ── State ─────────────────────────────────────────────────
   ingredients: [],
-  isTogglingId: null,   // Track which ingredient is being toggled (loading state per card)
-
-  // ── Derived (computed inline, not stored) ─────────────────
-  // Usage: const available = useIngredientStore(s => s.availableIngredients())
-  availableIngredients: () => get().ingredients.filter((i) => i.isAvailable),
-  availableNames: () =>
-    get().ingredients
-      .filter((i) => i.isAvailable)
-      .map((i) => i.name),
+  isTogglingId: null,
 
   // ── Actions ───────────────────────────────────────────────
 
@@ -25,24 +17,25 @@ export const useIngredientStore = create((set, get) => ({
    */
   toggleAvailability: async (uploadId, ingredientId) => {
     const { ingredients } = get();
-    const ingredient = ingredients.find((i) => i.id === ingredientId);
+    const ingredient = ingredients.find((i) => i.id === ingredientId || i._id === ingredientId);
     if (!ingredient) return;
 
-    // Optimistic update
+    const id = ingredient.id || ingredient._id;
+
     set((state) => ({
-      isTogglingId: ingredientId,
+      isTogglingId: id,
       ingredients: state.ingredients.map((i) =>
-        i.id === ingredientId ? { ...i, isAvailable: !i.isAvailable } : i
+        (i.id === id || i._id === id) ? { ...i, isAvailable: !i.isAvailable } : i
       ),
     }));
 
     try {
-      await api.patch(`/uploads/${uploadId}/ingredients/${ingredientId}/toggle`);
-    } catch (error) {
+      await api.patch(`/uploads/${uploadId}/ingredients/${id}/toggle`);
+    } catch {
       // Roll back
       set((state) => ({
         ingredients: state.ingredients.map((i) =>
-          i.id === ingredientId ? { ...i, isAvailable: ingredient.isAvailable } : i
+          (i.id === id || i._id === id) ? { ...i, isAvailable: ingredient.isAvailable } : i
         ),
       }));
       toast.error('Failed to update ingredient. Please try again.');

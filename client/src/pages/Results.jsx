@@ -1,31 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIngredientStore } from '../store/useIngredientStore';
 import { useRecipeStore } from '../store/useRecipeStore';
 import IngredientList from '../components/ingredients/IngredientList';
 import { LoadingSpinner, EmptyState } from '../components/shared/index';
 import api from '../api/axiosInstance';
-import { useState } from 'react';
 
 export default function Results() {
   const { uploadId } = useParams();
   const navigate = useNavigate();
-  const { ingredients, setIngredients, availableNames } = useIngredientStore();
-  const { searchRecipes } = useRecipeStore();
-  const [isLoading, setIsLoading] = useState(false);
+
+  const ingredients   = useIngredientStore((s) => s.ingredients);
+  const setIngredients = useIngredientStore((s) => s.setIngredients);
+  // Read availableNames as a derived value, not a function call
+  const availableIngredients = useIngredientStore((s) =>
+    s.ingredients.filter((i) => i.isAvailable)
+  );
+
+  const { searchRecipes, clearRecipes } = useRecipeStore();
+
+  const [isLoading,  setIsLoading]  = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
   // If navigated here fresh (e.g. from History), fetch the upload's ingredients
   useEffect(() => {
-    if (ingredients.length > 0) return; // Already populated by upload flow
+    if (ingredients.length > 0) return;
 
     const fetchUpload = async () => {
       setIsLoading(true);
       try {
         const { data } = await api.get(`/uploads/${uploadId}`);
-        console.log("showing results")
-        console.log(data)
-        // Normalise DB shape to match store shape
         const mapped = data.upload.extractedIngredients.map((ing) => ({
           id: ing._id,
           ...ing,
@@ -39,11 +43,14 @@ export default function Results() {
     };
 
     fetchUpload();
-  }, [uploadId, ingredients.length, setIngredients]);
+  }, [uploadId]);   // intentionally omit ingredients.length — only run once on mount
 
   const handleFindRecipes = () => {
-    const names = availableNames();
+    const names = availableIngredients.map((i) => i.name).filter(Boolean);
     if (!names.length) return;
+
+    // Clear any stale recipes from a previous search before navigating
+    clearRecipes();
     searchRecipes(names);
     navigate(`/results/${uploadId}/recipes`);
   };
@@ -53,7 +60,7 @@ export default function Results() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-text-secondary">Analysing your fridge…</p>
+          <p className="mt-4 text-text-secondary">Loading your fridge…</p>
         </div>
       </div>
     );
@@ -76,11 +83,7 @@ export default function Results() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <IngredientList uploadId={uploadId} />
+      <IngredientList uploadId={uploadId} onFindRecipes={handleFindRecipes} />
     </main>
   );
 }
-
-// Re-export a sub-route for the recipe grid view
-// This allows /results/:uploadId/recipes to show the RecipeGrid
-export { default as RecipeResults } from '../components/recipes/RecipeGrid';

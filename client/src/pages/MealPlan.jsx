@@ -306,19 +306,13 @@ function GroceryPreview({ mealPlan }) {
 
 // ── Main page ─────────────────────────────────────────────────
 export default function MealPlan() {
-  const { mealPlan, isLoading, isGenerating, fetchMealPlan, generateMealPlan } = useMealPlanStore();
+  const { mealPlan, isLoading, isGenerating, fetchMealPlan, generateMealPlan, deleteMealPlan } = useMealPlanStore();
   const user = useAuthStore((s) => s.user);
 
   // Modal state
   const [modal, setModal] = useState(null); // { dayIndex, mealType } | null
 
   useEffect(() => { fetchMealPlan(); }, [fetchMealPlan]);
-
-  useEffect(() => {
-  if (mealPlan) {
-    console.log('Meal Plan:', mealPlan);
-  }
-}, [mealPlan]);
 
   const handleGenerate = () => {
     generateMealPlan({
@@ -345,20 +339,36 @@ export default function MealPlan() {
             Plan your week — click any empty slot to add a meal
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="btn-primary flex items-center gap-2"
-          aria-busy={isGenerating}
-        >
-          {isGenerating ? (
-            <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>Generating…</>
-          ) : <>✨ {mealPlan ? 'Regenerate' : 'Generate'} plan</>}
-        </motion.button>
+        <div className="flex items-center gap-2">
+          {mealPlan && (
+            <button
+              onClick={() => {
+                if (window.confirm('Delete your entire meal plan?')) deleteMealPlan();
+              }}
+              className="btn-secondary text-sm flex items-center gap-1.5 text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete plan
+            </button>
+          )}
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="btn-primary flex items-center gap-2"
+            aria-busy={isGenerating}
+          >
+            {isGenerating ? (
+              <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>Generating…</>
+            ) : <>✨ {mealPlan ? 'Regenerate' : 'Generate'} plan</>}
+          </motion.button>
+        </div>
       </div>
 
       {!mealPlan ? (

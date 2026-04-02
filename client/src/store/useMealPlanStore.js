@@ -136,5 +136,18 @@ export const useMealPlanStore = create((set, get) => ({
     return get().addRecipeToSlot(dayIndex, mealType, recipe.spoonacularId);
   },
 
+  // ── Delete entire plan ────────────────────────────────────
+  deleteMealPlan: async () => {
+    const prev = get().mealPlan;
+    set({ mealPlan: null });
+    try {
+      await api.delete('/mealplan');
+      toast.success('Meal plan deleted.');
+    } catch (error) {
+      set({ mealPlan: prev });
+      toast.error(error.response?.data?.message || 'Failed to delete meal plan.');
+    }
+  },
+
   clearMealPlan: () => set({ mealPlan: null }),
 }));

@@ -132,6 +132,15 @@ router.patch('/slot/cooked', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ── DELETE /api/mealplan ──────────────────────────────────────
+// Delete the user's current meal plan entirely
+router.delete('/', async (req, res, next) => {
+  try {
+    await MealPlan.findOneAndDelete({ userId: req.user.id });
+    res.json({ success: true, message: 'Meal plan deleted.' });
+  } catch (e) { next(e); }
+});
+
 // ── Legacy PUT /api/mealplan (keep for backwards compat) ──────
 router.put('/', async (req, res, next) => {
   try {
