@@ -9,12 +9,12 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
   const validate = () => {
     const e = {};
-    if (!fields.displayName.trim())           e.displayName = 'Display name is required';
+    if (!fields.displayName.trim())            e.displayName = 'Display name is required';
     else if (fields.displayName.trim().length < 2) e.displayName = 'Must be at least 2 characters';
-    if (!fields.email.trim())                 e.email = 'Email is required';
+    if (!fields.email.trim())                  e.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(fields.email)) e.email = 'Enter a valid email';
-    if (!fields.password)                     e.password = 'Password is required';
-    else if (fields.password.length < 8)      e.password = 'Must be at least 8 characters';
+    if (!fields.password)                      e.password = 'Password is required';
+    else if (fields.password.length < 8)       e.password = 'Must be at least 8 characters';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -27,115 +27,50 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }) {
   };
 
   const set = (field) => (e) => {
-    setFields((prev) => ({ ...prev, [field]: e.target.value }));
-    // Clear error on type
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setFields((p) => ({ ...p, [field]: e.target.value }));
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: undefined }));
   };
 
   return (
     <motion.form
       onSubmit={handleSubmit}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      noValidate
-      className="space-y-5"
-      aria-label="Registration form"
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+      noValidate className="space-y-5"
     >
-      {/* Display name */}
-      <div>
-        <label htmlFor="reg-name" className="block text-sm font-medium text-text-primary mb-1.5">
-          Your name
-        </label>
-        <input
-          id="reg-name"
-          type="text"
-          autoComplete="name"
-          className={`input ${errors.displayName ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
-          placeholder="e.g. Priya"
-          value={fields.displayName}
-          onChange={set('displayName')}
-          aria-invalid={!!errors.displayName}
-          aria-describedby={errors.displayName ? 'reg-name-error' : undefined}
-        />
-        {errors.displayName && (
-          <p id="reg-name-error" className="mt-1.5 text-xs text-red-500" role="alert">
-            {errors.displayName}
-          </p>
-        )}
-      </div>
+      {[
+        { field: 'displayName', label: 'Your name', type: 'text', placeholder: 'e.g. Priya', autoComplete: 'name' },
+        { field: 'email',       label: 'Email',     type: 'email', placeholder: 'you@example.com', autoComplete: 'email' },
+        { field: 'password',    label: 'Password',  type: 'password', placeholder: 'At least 8 characters', autoComplete: 'new-password' },
+      ].map(({ field, label, type, placeholder, autoComplete }) => (
+        <div key={field}>
+          <label className="block text-sm font-medium text-text-secondary mb-1.5">{label}</label>
+          <input
+            type={type} autoComplete={autoComplete}
+            className={`input ${errors[field] ? 'border-red-500/60' : ''}`}
+            placeholder={placeholder}
+            value={fields[field]} onChange={set(field)}
+          />
+          {errors[field] && <p className="mt-1.5 text-xs text-red-400" role="alert">{errors[field]}</p>}
+        </div>
+      ))}
 
-      {/* Email */}
-      <div>
-        <label htmlFor="reg-email" className="block text-sm font-medium text-text-primary mb-1.5">
-          Email
-        </label>
-        <input
-          id="reg-email"
-          type="email"
-          autoComplete="email"
-          className={`input ${errors.email ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
-          placeholder="you@example.com"
-          value={fields.email}
-          onChange={set('email')}
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? 'reg-email-error' : undefined}
-        />
-        {errors.email && (
-          <p id="reg-email-error" className="mt-1.5 text-xs text-red-500" role="alert">
-            {errors.email}
-          </p>
-        )}
-      </div>
-
-      {/* Password */}
-      <div>
-        <label htmlFor="reg-password" className="block text-sm font-medium text-text-primary mb-1.5">
-          Password
-        </label>
-        <input
-          id="reg-password"
-          type="password"
-          autoComplete="new-password"
-          className={`input ${errors.password ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
-          placeholder="At least 8 characters"
-          value={fields.password}
-          onChange={set('password')}
-          aria-invalid={!!errors.password}
-          aria-describedby={errors.password ? 'reg-password-error' : 'reg-password-hint'}
-        />
-        {errors.password ? (
-          <p id="reg-password-error" className="mt-1.5 text-xs text-red-500" role="alert">
-            {errors.password}
-          </p>
-        ) : (
-          <p id="reg-password-hint" className="mt-1.5 text-xs text-text-muted">
-            Minimum 8 characters
-          </p>
-        )}
-      </div>
-
-      <button type="submit" className="btn-primary w-full" disabled={isLoading} aria-busy={isLoading}>
+      <motion.button
+        type="submit" disabled={isLoading}
+        whileHover={!isLoading ? { scale: 1.02 } : {}}
+        whileTap={!isLoading ? { scale: 0.97 } : {}}
+        className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+      >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            Creating account…
-          </span>
-        ) : (
-          'Create account'
-        )}
-      </button>
+          <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>Creating account…</>
+        ) : 'Create account'}
+      </motion.button>
 
-      <p className="text-center text-sm text-text-secondary">
+      <p className="text-center text-sm text-text-muted">
         Already have an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="text-brand-600 font-medium hover:underline"
-        >
+        <button type="button" onClick={onSwitchToLogin} className="gradient-text font-medium hover:opacity-80 transition-opacity">
           Log in
         </button>
       </p>

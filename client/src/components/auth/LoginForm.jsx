@@ -9,9 +9,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
 
   const validate = () => {
     const e = {};
-    if (!fields.email.trim())            e.email = 'Email is required';
+    if (!fields.email.trim())             e.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(fields.email)) e.email = 'Enter a valid email';
-    if (!fields.password)                e.password = 'Password is required';
+    if (!fields.password)                 e.password = 'Password is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -23,91 +23,53 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }) {
     if (result.success) onSuccess?.();
   };
 
-  const set = (field) => (e) =>
-    setFields((prev) => ({ ...prev, [field]: e.target.value }));
+  const set = (field) => (e) => setFields((p) => ({ ...p, [field]: e.target.value }));
 
   return (
     <motion.form
       onSubmit={handleSubmit}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      noValidate
-      className="space-y-5"
-      aria-label="Login form"
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+      noValidate className="space-y-5"
     >
-      {/* Email */}
       <div>
-        <label htmlFor="login-email" className="block text-sm font-medium text-text-primary mb-1.5">
-          Email
-        </label>
+        <label className="block text-sm font-medium text-text-secondary mb-1.5">Email</label>
         <input
-          id="login-email"
-          type="email"
-          autoComplete="email"
-          className={`input ${errors.email ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
+          type="email" autoComplete="email"
+          className={`input ${errors.email ? 'border-red-500/60 focus:border-red-500/80' : ''}`}
           placeholder="you@example.com"
-          value={fields.email}
-          onChange={set('email')}
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? 'login-email-error' : undefined}
+          value={fields.email} onChange={set('email')}
         />
-        {errors.email && (
-          <p id="login-email-error" className="mt-1.5 text-xs text-red-500" role="alert">
-            {errors.email}
-          </p>
-        )}
+        {errors.email && <p className="mt-1.5 text-xs text-red-400" role="alert">{errors.email}</p>}
       </div>
 
-      {/* Password */}
       <div>
-        <label htmlFor="login-password" className="block text-sm font-medium text-text-primary mb-1.5">
-          Password
-        </label>
+        <label className="block text-sm font-medium text-text-secondary mb-1.5">Password</label>
         <input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          className={`input ${errors.password ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
+          type="password" autoComplete="current-password"
+          className={`input ${errors.password ? 'border-red-500/60 focus:border-red-500/80' : ''}`}
           placeholder="••••••••"
-          value={fields.password}
-          onChange={set('password')}
-          aria-invalid={!!errors.password}
-          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          value={fields.password} onChange={set('password')}
         />
-        {errors.password && (
-          <p id="login-password-error" className="mt-1.5 text-xs text-red-500" role="alert">
-            {errors.password}
-          </p>
-        )}
+        {errors.password && <p className="mt-1.5 text-xs text-red-400" role="alert">{errors.password}</p>}
       </div>
 
-      <button
-        type="submit"
-        className="btn-primary w-full"
-        disabled={isLoading}
-        aria-busy={isLoading}
+      <motion.button
+        type="submit" disabled={isLoading}
+        whileHover={!isLoading ? { scale: 1.02 } : {}}
+        whileTap={!isLoading ? { scale: 0.97 } : {}}
+        className="btn-primary w-full py-3 flex items-center justify-center gap-2"
       >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            Logging in…
-          </span>
-        ) : (
-          'Log in'
-        )}
-      </button>
+          <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>Logging in…</>
+        ) : 'Log in'}
+      </motion.button>
 
-      <p className="text-center text-sm text-text-secondary">
-        Don&apos;t have an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToRegister}
-          className="text-brand-600 font-medium hover:underline"
-        >
+      <p className="text-center text-sm text-text-muted">
+        Don't have an account?{' '}
+        <button type="button" onClick={onSwitchToRegister} className="gradient-text font-medium hover:opacity-80 transition-opacity">
           Create one
         </button>
       </p>
