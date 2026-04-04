@@ -317,7 +317,7 @@ export default function MealPlan() {
   const handleGenerate = () => {
     generateMealPlan({
       targetCalories: 2000,
-      diet: user?.preferences?.dietaryRestrictions?.[0] || '',
+      diet: user?.preferences?.dietaryRestrictions?.[0] || 'vegetarian',
     });
   };
 
