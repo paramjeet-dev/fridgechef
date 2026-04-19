@@ -110,7 +110,7 @@ export const getSimilarRecipes = async (spoonacularId) => {
 };
 
 // ── 4. Generate meal plan ─────────────────────────────────────
-export const generateMealPlan = async ({ targetCalories = 2000, diet = '', timeFrame = 'week' }) => {
+export const generateMealPlan = async ({ targetCalories = 2000, diet = 'indian', timeFrame = 'week' }) => {
   const params = { timeFrame, targetCalories };
   if (diet) params.diet = diet;
 
