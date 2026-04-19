@@ -1,22 +1,43 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useRecipeStore } from '../../store/useRecipeStore';
+import { recipeApi } from '../../api/recipeApi';
+import { LoadingSpinner } from '../shared/index';
 
 export default function SimilarRecipes({ spoonacularId }) {
   const navigate = useNavigate();
-  const { similarRecipes, fetchSimilarRecipes } = useRecipeStore();
+  const [recipes,    setRecipes]    = useState([]);
+  const [isLoading,  setIsLoading]  = useState(true);
 
-  useEffect(() => { if (spoonacularId) fetchSimilarRecipes(spoonacularId); }, [spoonacularId, fetchSimilarRecipes]);
+  useEffect(() => {
+    if (!spoonacularId) return;
+    setIsLoading(true);
+    setRecipes([]);
 
-  if (!similarRecipes.length) return (
-    <p className="text-sm text-text-muted text-center py-8">No similar recipes found.</p>
-  );
+    recipeApi.getSimilar(spoonacularId)
+      .then(({ data }) => setRecipes(data.recipes || []))
+      .catch(() => setRecipes([]))
+      .finally(() => setIsLoading(false));
+  }, [spoonacularId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <LoadingSpinner size="md" label="Finding similar recipes…" />
+      </div>
+    );
+  }
+
+  if (!recipes.length) {
+    return (
+      <p className="text-sm text-text-muted text-center py-8">No similar recipes found.</p>
+    );
+  }
 
   return (
     <section aria-label="Similar recipes">
       <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-none">
-        {similarRecipes.map((recipe, i) => (
+        {recipes.map((recipe, i) => (
           <motion.button
             key={recipe.spoonacularId}
             initial={{ opacity: 0, x: 20 }}
@@ -28,16 +49,23 @@ export default function SimilarRecipes({ spoonacularId }) {
           >
             <div className="aspect-video bg-white/5 overflow-hidden">
               {recipe.image ? (
-                <img src={recipe.image} alt={recipe.title}
+                <img
+                  src={recipe.image}
+                  alt={recipe.title}
                   className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
-                  loading="lazy" />
+                  loading="lazy"
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
               )}
             </div>
             <div className="p-2.5">
-              <p className="text-xs font-semibold text-text-primary line-clamp-2 leading-snug">{recipe.title}</p>
-              {recipe.cookTime && <p className="text-xs text-text-muted mt-1">{recipe.cookTime} min</p>}
+              <p className="text-xs font-semibold text-text-primary line-clamp-2 leading-snug">
+                {recipe.title}
+              </p>
+              {recipe.cookTime && (
+                <p className="text-xs text-text-muted mt-1">{recipe.cookTime} min</p>
+              )}
             </div>
           </motion.button>
         ))}

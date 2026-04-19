@@ -13,18 +13,24 @@ export const CATEGORY_ICONS = {
   snacks: '🍿', other: '📦',
 };
 
-// Merge multiple docs with the same ingredient name into one entry
+// Merge multiple docs with the same ingredient name into one entry.
+// The merged entry keeps ALL _ids so we can delete them together.
 function aggregateByName(items) {
   const map = new Map();
   for (const item of items) {
     const key = (item.name || '').toLowerCase().trim();
     if (!map.has(key)) {
-      map.set(key, { ...item, quantity: item.quantity ?? 1 });
+      map.set(key, {
+        ...item,
+        quantity: item.quantity ?? 1,
+        _allIds: [item._id],          // track every raw _id merged here
+      });
     } else {
       const prev = map.get(key);
       map.set(key, {
         ...prev,
         quantity: (prev.quantity ?? 1) + (item.quantity ?? 1),
+        _allIds: [...prev._allIds, item._id],
         expiryDate:
           item.expiryDate &&
           (!prev.expiryDate || new Date(item.expiryDate) > new Date(prev.expiryDate))
@@ -57,7 +63,6 @@ function applySearch(items, query) {
 }
 
 export const useInventoryStore = create((set, get) => ({
-  // raw items from server (before search filter)
   _rawInventory: [],
   inventory: [],
   grouped: {},
@@ -108,7 +113,7 @@ export const useInventoryStore = create((set, get) => ({
     }
   },
 
-  // ── Update (real-time: updates local state immediately) ───
+  // ── Update ────────────────────────────────────────────────
   updateItem: async (id, updates) => {
     const prevRaw = get()._rawInventory;
     const newRaw = prevRaw.map((item) =>
@@ -118,26 +123,46 @@ export const useInventoryStore = create((set, get) => ({
     try {
       await inventoryApi.update(id, updates);
     } catch (error) {
-      get()._recompute(prevRaw, get().searchQuery); // rollback
+      get()._recompute(prevRaw, get().searchQuery);
       toast.error(error.response?.data?.message || 'Failed to update item.');
     }
   },
 
-  // ── Delete one (real-time) ────────────────────────────────
-  deleteItem: async (id) => {
+  /**
+   * deleteItem — deletes ALL raw entries that share the same name as the
+   * given aggregated card (identified by _id or _allIds on the aggregated item).
+   * This ensures the card fully disappears even when multiple DB docs were
+   * merged into one display card.
+   */
+  deleteItem: async (aggregatedItem) => {
+    // _allIds is set by aggregateByName; fall back to single _id for safety
+    const idsToDelete = aggregatedItem._allIds?.length
+      ? aggregatedItem._allIds
+      : [aggregatedItem._id];
+
     const prevRaw = get()._rawInventory;
-    const newRaw = prevRaw.filter((i) => i._id !== id);
+    const idSet = new Set(idsToDelete);
+
+    // Optimistic remove from raw list
+    const newRaw = prevRaw.filter((i) => !idSet.has(i._id));
     get()._recompute(newRaw, get().searchQuery);
+
     try {
-      const { data } = await inventoryApi.remove(id);
-      toast.success(data.message);
+      if (idsToDelete.length === 1) {
+        const { data } = await inventoryApi.remove(idsToDelete[0]);
+        toast.success(data.message);
+      } else {
+        // Bulk-delete all duplicates in one request
+        const { data } = await inventoryApi.bulkRemove(idsToDelete);
+        toast.success(data.message || `Removed ${idsToDelete.length} items.`);
+      }
     } catch (error) {
-      get()._recompute(prevRaw, get().searchQuery); // rollback
+      get()._recompute(prevRaw, get().searchQuery);
       toast.error(error.response?.data?.message || 'Failed to remove item.');
     }
   },
 
-  // ── Bulk delete ───────────────────────────────────────────
+  // ── Bulk delete (selection bar) ───────────────────────────
   bulkDelete: async (ids) => {
     set({ isSubmitting: true });
     const prevRaw = get()._rawInventory;
@@ -149,7 +174,7 @@ export const useInventoryStore = create((set, get) => ({
       toast.success(data.message);
       return { success: true };
     } catch (error) {
-      get()._recompute(prevRaw, get().searchQuery); // rollback
+      get()._recompute(prevRaw, get().searchQuery);
       toast.error(error.response?.data?.message || 'Failed to remove items.');
       return { success: false };
     } finally {
@@ -157,7 +182,7 @@ export const useInventoryStore = create((set, get) => ({
     }
   },
 
-  // ── Search (client-side, instant) ─────────────────────────
+  // ── Search ────────────────────────────────────────────────
   setSearch: (q) => {
     set({ searchQuery: q });
     get()._recompute(get()._rawInventory, q);

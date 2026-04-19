@@ -3,16 +3,18 @@ import api from '../api/axiosInstance';
 import toast from 'react-hot-toast';
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
-export const MEAL_ICONS  = { breakfast: '🌅', lunch: '☀️', dinner: '🌙', snack: '🍎' };
-export const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+
+// ── Snack removed ──────────────────────────────────────────────
+export const MEAL_TYPES  = ['breakfast', 'lunch', 'dinner'];
+export const MEAL_ICONS  = { breakfast: '🌅', lunch: '☀️', dinner: '🌙' };
+export const MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
 
 export const useMealPlanStore = create((set, get) => ({
   // ── State ─────────────────────────────────────────────────
-  mealPlan:    null,
-  isLoading:   false,
+  mealPlan:     null,
+  isLoading:    false,
   isGenerating: false,
-  isUpdating:  false,   // for any slot mutation
+  isUpdating:   false,
 
   // ── Fetch ──────────────────────────────────────────────────
   fetchMealPlan: async () => {
@@ -56,7 +58,7 @@ export const useMealPlanStore = create((set, get) => ({
     }
   },
 
-  // ── Add a custom (non-recipe) meal ────────────────────────
+  // ── Add a custom meal ──────────────────────────────────────
   setCustomMeal: async (dayIndex, mealType, customName) => {
     set({ isUpdating: true });
     const prev = get().mealPlan;
@@ -75,7 +77,6 @@ export const useMealPlanStore = create((set, get) => ({
   // ── Remove a slot ─────────────────────────────────────────
   removeSlot: async (dayIndex, mealType) => {
     const prev = get().mealPlan;
-
     // Optimistic update
     set((state) => ({
       mealPlan: {
@@ -87,7 +88,6 @@ export const useMealPlanStore = create((set, get) => ({
         ),
       },
     }));
-
     try {
       const { data } = await api.delete('/mealplan/slot', { data: { dayIndex, mealType } });
       set({ mealPlan: data.mealPlan });
@@ -100,8 +100,6 @@ export const useMealPlanStore = create((set, get) => ({
   // ── Toggle cooked ──────────────────────────────────────────
   toggleCooked: async (dayIndex, mealType) => {
     const prev = get().mealPlan;
-
-    // Optimistic update
     set((state) => ({
       mealPlan: {
         ...state.mealPlan,
@@ -111,15 +109,11 @@ export const useMealPlanStore = create((set, get) => ({
           if (!slot) return day;
           return {
             ...day,
-            meals: {
-              ...day.meals,
-              [mealType]: { ...slot, isCooked: !slot.isCooked },
-            },
+            meals: { ...day.meals, [mealType]: { ...slot, isCooked: !slot.isCooked } },
           };
         }),
       },
     }));
-
     try {
       await api.patch('/mealplan/slot/cooked', { dayIndex, mealType });
     } catch (error) {
@@ -128,25 +122,25 @@ export const useMealPlanStore = create((set, get) => ({
     }
   },
 
-  // ── Legacy (kept for backwards compat) ───────────────────
-  updateMealSlot: async (dayIndex, mealType, recipe) => {
-    if (!recipe) {
-      return get().removeSlot(dayIndex, mealType);
-    }
-    return get().addRecipeToSlot(dayIndex, mealType, recipe.spoonacularId);
-  },
-
-  // ── Delete entire plan ────────────────────────────────────
+  // ── Delete entire plan — optimistic: null immediately ─────
   deleteMealPlan: async () => {
     const prev = get().mealPlan;
+    // Clear UI immediately so user sees the empty state at once
     set({ mealPlan: null });
     try {
       await api.delete('/mealplan');
       toast.success('Meal plan deleted.');
     } catch (error) {
+      // Roll back only if server fails
       set({ mealPlan: prev });
       toast.error(error.response?.data?.message || 'Failed to delete meal plan.');
     }
+  },
+
+  // ── Legacy ────────────────────────────────────────────────
+  updateMealSlot: async (dayIndex, mealType, recipe) => {
+    if (!recipe) return get().removeSlot(dayIndex, mealType);
+    return get().addRecipeToSlot(dayIndex, mealType, recipe.spoonacularId);
   },
 
   clearMealPlan: () => set({ mealPlan: null }),
